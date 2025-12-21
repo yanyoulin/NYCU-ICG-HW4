@@ -1,0 +1,16 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/src/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glfw/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glfw/src/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glfw/docs/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glm/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glm/glm/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/glad/cmake_install.cmake",
+		"C:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/build/extern/tinyobjloader/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
