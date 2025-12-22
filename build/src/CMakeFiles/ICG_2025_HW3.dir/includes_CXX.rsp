@@ -1,1 +1,1 @@
--IC:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/extern/glfw/include -IC:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/extern/glm -IC:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/extern/glad/include -IC:/Users/yanyoulin/Desktop/NYCU/ICG/ICG_2025_HW3/extern/tinyobjloader/include
+-I"C:/Users/sunny/Downloads/NYCU-ICG-HW4/extern/glfw/include" -I"C:/Users/sunny/Downloads/NYCU-ICG-HW4/extern/glm" -I"C:/Users/sunny/Downloads/NYCU-ICG-HW4/extern/glad/include" -I"C:/Users/sunny/Downloads/NYCU-ICG-HW4/extern/tinyobjloader/include"

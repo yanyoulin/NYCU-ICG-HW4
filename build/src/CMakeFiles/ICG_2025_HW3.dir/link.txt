@@ -1,3 +1,0 @@
-"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\ICG_2025_HW3.dir/objects.a
-C:\msys64\ucrt64\bin\ar.exe qc CMakeFiles\ICG_2025_HW3.dir/objects.a @CMakeFiles\ICG_2025_HW3.dir\objects1.rsp
-C:\msys64\ucrt64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\ICG_2025_HW3.dir/objects.a -Wl,--no-whole-archive -o ICG_2025_HW3.exe -Wl,--out-implib,libICG_2025_HW3.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\ICG_2025_HW3.dir\linkLibs.rsp
