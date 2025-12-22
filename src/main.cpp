@@ -100,7 +100,7 @@ float explodeStartTime = 0.0f;
 
 glm::vec3 burgerPos(0.0f);    
 glm::vec3 burgerVelocity(0.0f); 
-const glm::vec3 gravity(0.0f, -98.0f, 0.0f); 
+const glm::vec3 gravity(0.0f, -200.0f, 0.0f); 
 
 float handRotationAngle = 0.0f;
 
@@ -347,7 +347,7 @@ void update(){
             // B. 計算手臂向量 (從肩膀到手的向量)
             // 根據你的 code，手相對肩膀偏移是 (-0.4, -0.4, 0.0)
             // 這裡手動乘 100.0f 是因為這向量是純方向長度，不受 modelMatrix 位移影響，只受縮放影響
-            glm::vec3 armVector = glm::vec3(-0.6f, -0.4f, 0.0f) * 100.0f;
+            glm::vec3 armVector = glm::vec3(-0.7f, -0.4f, 0.0f) * 100.0f;
 
             // C. 將手臂向量旋轉 120 度
             // 建立一個臨時旋轉矩陣 (繞 X 軸轉 120 度)
@@ -384,12 +384,16 @@ void update(){
         burgerVelocity += gravity * dt;
         burgerPos += burgerVelocity * dt;
 
-        // 碰撞偵測: 碰到地板 (地板高度約 -50.0f)
-        if (burgerPos.y <= -50.0f) {
+        float floorLevel = 0.0f;
+        float burgerRadius = 40.0f;
+
+        if (burgerPos.y <= floorLevel + burgerRadius) {
             isBurgerFlying = false;
             isExploding = true;
             explodeStartTime = now;
-            burgerPos.y = -50.0f; // 修正位置在地板上
+            
+            // 修正位置：停在半徑的高度，這樣底部剛好在地板
+            burgerPos.y = floorLevel + burgerRadius; 
         }
     }
 
@@ -480,7 +484,7 @@ void render(){
         
         glm::mat4 burgerMat = glm::mat4(1.0f);
         burgerMat = glm::translate(burgerMat, burgerPos);
-        burgerMat = glm::scale(burgerMat, glm::vec3(50.0f)); // 漢堡大小
+        burgerMat = glm::scale(burgerMat, glm::vec3(40.0f)); // 漢堡大小
         // 讓漢堡自己在空中轉
         burgerMat = glm::rotate(burgerMat, (float)glfwGetTime() * 5.0f, glm::vec3(1,1,1));
 
@@ -500,8 +504,10 @@ void render(){
         // 傳送必要 Uniform
         bombShader->set_uniform_value("view", view);
         bombShader->set_uniform_value("projection", projection);
-        bombShader->set_uniform_value("model", glm::translate(glm::mat4(1.0f), burgerPos)); // 爆炸位置
-        
+        glm::mat4 explodeMat = glm::mat4(1.0f);
+        explodeMat = glm::translate(explodeMat, burgerPos); // 1. 先移到爆炸點
+        explodeMat = glm::scale(explodeMat, glm::vec3(40.0f)); // 2. 記得放大！(跟飛行時一樣)
+        bombShader->set_uniform_value("model", explodeMat);        
         // bomb.geom 需要的時間參數 (讓它從 0 開始)
         float explodeTime = (float)glfwGetTime() - explodeStartTime;
         bombShader->set_uniform_value("time", explodeTime);

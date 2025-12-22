@@ -13,12 +13,6 @@ uniform float time;
 uniform mat4 projection;
 uniform vec3 aExplosionColor;
 
-vec4 explode(vec4 position, vec3 normal) {
-    float magnitude = 10.0;
-    vec3 direction = normal * pow(time, 0.3) * magnitude; 
-    return position + vec4(direction, 0.0);
-}
-
 vec3 GetNormal()
 {
    vec3 a = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
@@ -36,7 +30,7 @@ void main() {
     
     vec3 normal = GetNormal();
     for(int i = 0; i < 3; i++) {
-        
+
         vec4 explodedPos = explode(gl_in[i].gl_Position, normal);
         
         gl_Position = projection * explodedPos;
