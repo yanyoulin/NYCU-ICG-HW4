@@ -70,7 +70,10 @@ light_t light;
 material_t material;
 camera_t camera;
 
-Object* staticModel = nullptr;
+// SpongeBob model parts
+Object* spongeBobBody = nullptr;
+Object* spongeBobLeftHand = nullptr;
+Object* spongeBobRightHand = nullptr;
 Object* cubeModel = nullptr;
 bool isCube = false;
 glm::mat4 modelMatrix(1.0f);
@@ -81,17 +84,31 @@ float lastFrame = 0.0f;
 
 void model_setup(){
 #if defined(__linux__) || defined(__APPLE__)
-    std::string obj_path = "..\\..\\src\\asset\\obj\\Mei_Run.obj";
+    std::string body_path = "..\\..\\src\\asset\\obj\\Body.obj";
+    std::string left_hand_path = "..\\..\\src\\asset\\obj\\Left_Hand.obj";
+    std::string right_hand_path = "..\\..\\src\\asset\\obj\\Right_Hand.obj";
     std::string cube_obj_path = "..\\..\\src\\asset\\obj\\cube.obj";
-    std::string texture_path = "..\\..\\src\\asset\\texture\\Mei_TEX.png";
+    std::string texture_path = "..\\..\\src\\asset\\texture\\spongebob.png";
 #else
-    std::string obj_path = "..\\..\\src\\asset\\obj\\Mei_Run.obj";
-    std::string texture_path = "..\\..\\src\\asset\\texture\\Mei_TEX.png";
+    std::string body_path = "..\\..\\src\\asset\\obj\\Body.obj";
+    std::string left_hand_path = "..\\..\\src\\asset\\obj\\Left_Hand.obj";
+    std::string right_hand_path = "..\\..\\src\\asset\\obj\\Right_Hand.obj";
     std::string cube_obj_path = "..\\..\\src\\asset\\obj\\cube.obj";
+    std::string texture_path = "..\\..\\src\\asset\\texture\\spongebob.png";
 #endif
 
-    staticModel = new Object(obj_path);
-    staticModel->loadTexture(texture_path);
+    // Load SpongeBob body
+    spongeBobBody = new Object(body_path);
+    spongeBobBody->loadTexture(texture_path);
+    
+    // Load SpongeBob left hand
+    spongeBobLeftHand = new Object(left_hand_path);
+    spongeBobLeftHand->loadTexture(texture_path);
+    
+    // Load SpongeBob right hand
+    spongeBobRightHand = new Object(right_hand_path);
+    spongeBobRightHand->loadTexture(texture_path);
+    
     cubeModel = new Object(cube_obj_path);
 
     modelMatrix = glm::mat4(1.0f);
@@ -280,10 +297,14 @@ void render(){
 
     glActiveTexture(GL_TEXTURE0);
 
-    if(isCube)
+    if(isCube) {
         cubeModel->draw();
-    else
-        staticModel->draw();
+    } else {
+        // Draw all SpongeBob parts
+        spongeBobBody->draw();
+        spongeBobLeftHand->draw();
+        spongeBobRightHand->draw();
+    }
 
     shaderPrograms[shaderProgramIndex]->release();
 
@@ -350,7 +371,9 @@ int main() {
         glfwPollEvents();
     }
 
-    delete staticModel;
+    delete spongeBobBody;
+    delete spongeBobLeftHand;
+    delete spongeBobRightHand;
     delete cubeModel;
     for (auto shader : shaderPrograms) {
         delete shader;
