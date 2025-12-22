@@ -17,6 +17,9 @@ void processInput(GLFWwindow *window);
 void updateCamera();
 void applyOrbitDelta(float yawDelta, float pitchDelta, float radiusDelta);
 unsigned int loadCubemap(std::vector<std::string> &mFileName);
+unsigned int bubbleVAO, bubbleVBO;
+// 10 個泡泡的隨機起始時間偏移量
+float bubbleOffsets[] = { 0.0f, 0.5f, 1.2f, 2.8f, 3.1f, 4.5f, 0.8f, 2.2f, 3.6f, 1.9f };
 
 struct material_t{
     glm::vec3 ambient;
@@ -75,7 +78,9 @@ Object* spongeBobBody = nullptr;
 Object* spongeBobLeftHand = nullptr;
 Object* spongeBobRightHand = nullptr;
 Object* cubeModel = nullptr;
+Object* floorModel = nullptr;
 bool isCube = false;
+bool isBlowing = false; // 吹泡泡
 glm::mat4 modelMatrix(1.0f);
 
 float currentTime = 0.0f;
@@ -110,6 +115,10 @@ void model_setup(){
     spongeBobRightHand->loadTexture(texture_path);
     
     cubeModel = new Object(cube_obj_path);
+
+    floorModel = new Object(cube_obj_path); // 重複利用 cube.obj
+    std::string floor_texture_path = "..\\..\\src\\asset\\texture\\skybox\\bottom.jpg";     
+    floorModel->loadTexture(floor_texture_path);
 
     modelMatrix = glm::mat4(1.0f);
     modelMatrix = glm::scale(modelMatrix, glm::vec3(100.0f));
@@ -176,17 +185,21 @@ void shader_setup(){
 #endif
 
     std::vector<std::string> shadingMethod = {
-        "default", "bling-phong", "gouraud", "metallic", "glass_schlick"
+        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble"
     };
 
     for(int i=0; i<shadingMethod.size(); i++){
         std::string vpath = shaderDir + shadingMethod[i] + ".vert";
         std::string fpath = shaderDir + shadingMethod[i] + ".frag";
+        std::string gpath = shaderDir + shadingMethod[i] + ".geom";
 
         shader_program_t* shaderProgram = new shader_program_t();
         shaderProgram->create();
         shaderProgram->add_shader(vpath, GL_VERTEX_SHADER);
         shaderProgram->add_shader(fpath, GL_FRAGMENT_SHADER);
+        if (shadingMethod[i] == "bubble") {
+            shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
+        }
         shaderProgram->link_shader();
         shaderPrograms.push_back(shaderProgram);
     }
@@ -231,6 +244,22 @@ void cubemap_setup(){
     glBindVertexArray(0);
 }
 
+void bubble_setup() {
+    
+    glGenVertexArrays(1, &bubbleVAO);
+    glGenBuffers(1, &bubbleVBO);
+    
+    glBindVertexArray(bubbleVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, bubbleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bubbleOffsets), bubbleOffsets, GL_STATIC_DRAW);
+    
+    // layout(location = 0) in float startOffset;
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 1, GL_FLOAT, GL_FALSE, sizeof(float), (void*)0);
+    
+    glBindVertexArray(0);
+}
+
 void setup(){
     light_setup();
     model_setup();
@@ -238,6 +267,7 @@ void setup(){
     camera_setup();
     cubemap_setup();
     material_setup();
+    bubble_setup();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -297,6 +327,20 @@ void render(){
 
     glActiveTexture(GL_TEXTURE0);
 
+
+    // 畫地板 
+    glm::mat4 floorMatrix = glm::mat4(1.0f);
+    floorMatrix = glm::translate(floorMatrix, glm::vec3(0.0f, -0.5f, 0.0f)); 
+    floorMatrix = glm::scale(floorMatrix, glm::vec3(1000.0f, 1.0f, 1000.0f));
+
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", floorMatrix);
+    
+    if(floorModel != nullptr) {
+        floorModel->draw();
+    }
+
+    // 畫海綿寶寶
+    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", modelMatrix);
     if(isCube) {
         cubeModel->draw();
     } else {
@@ -330,6 +374,27 @@ void render(){
     glBindVertexArray(0);
     cubemapShader->release();
     glDepthFunc(GL_LESS);
+
+    // 畫泡泡
+    if (isBlowing){
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        shader_program_t* bubbleShader = shaderPrograms[5]; // 假設是 index 5
+        bubbleShader->use();
+        bubbleShader->set_uniform_value("view", view);
+        bubbleShader->set_uniform_value("projection", projection);
+        bubbleShader->set_uniform_value("time", (float)glfwGetTime());
+        bubbleShader->set_uniform_value("model", modelMatrix); 
+
+        glBindVertexArray(bubbleVAO);
+        glDrawArrays(GL_POINTS, 0, 10); 
+        
+        glBindVertexArray(0);
+        bubbleShader->release();
+
+        glDisable(GL_BLEND);
+    }
 }
 
 int main() {
@@ -379,6 +444,7 @@ int main() {
         delete shader;
     }
     delete cubemapShader;
+    delete floorModel;
 
     glfwTerminate();
     return 0;
@@ -436,6 +502,8 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
         shaderProgramIndex = 8;
     if( key == GLFW_KEY_9 && action == GLFW_PRESS)
         isCube = !isCube;
+    if (key == GLFW_KEY_B && action == GLFW_PRESS)
+        isBlowing = !isBlowing;
 }
 
 void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
