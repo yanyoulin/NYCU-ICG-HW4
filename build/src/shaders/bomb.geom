@@ -8,9 +8,9 @@ in VS_OUT {
 
 out vec2 TexCoord;
 out vec4 ExplosionColor;
-out float mixValue;
 
 uniform float time;
+uniform mat4 projection;
 uniform vec3 aExplosionColor;
 
 vec4 explode(vec4 position, vec3 normal) {
@@ -26,15 +26,25 @@ vec3 GetNormal()
    return normalize(cross(a, b));
 }
 
+vec4 explode(vec4 position, vec3 normal) {
+    float magnitude = 5.0;
+    vec3 direction = normal * pow(max(time, 0.0), 0.3) * magnitude; 
+    return position + vec4(direction, 0.0);
+}
+
 void main() {
     
     vec3 normal = GetNormal();
     for(int i = 0; i < 3; i++) {
-        gl_Position = explode(gl_in[i].gl_Position, normal);
+        
+        vec4 explodedPos = explode(gl_in[i].gl_Position, normal);
+        
+        gl_Position = projection * explodedPos;
+        
         TexCoord = gs_in[i].TexCoord;
-
-        ExplosionColor = vec4(aExplosionColor, min(0.0, 1.0 - time * 2.0));
-        mixValue = min(1.0, time * 2.0);
+        
+        float alpha = 1.0 - (time * 0.5); 
+        ExplosionColor = vec4(aExplosionColor, alpha);
 
         EmitVertex();
     }
