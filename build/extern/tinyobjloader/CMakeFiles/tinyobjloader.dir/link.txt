@@ -1,2 +1,0 @@
-C:\msys64\ucrt64\bin\ar.exe qc libtinyobjloader.a CMakeFiles/tinyobjloader.dir/src/tiny_obj_loader.cc.obj
-C:\msys64\ucrt64\bin\ranlib.exe libtinyobjloader.a
