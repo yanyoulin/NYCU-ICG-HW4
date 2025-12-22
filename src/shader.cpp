@@ -23,6 +23,9 @@ void shader_program_t::add_shader(std::string& filepath, unsigned int type){
     if(type == GL_VERTEX_SHADER){
         std::cout << "adding vert shader from " << filepath << std::endl;  
     }
+    else if(type == GL_GEOMETRY_SHADER){
+        std::cout << "adding geom shader from " << filepath << std::endl;  
+    }
     else if(type == GL_FRAGMENT_SHADER){
         std::cout << "adding frag shader from " << filepath << std::endl;
     }
