@@ -507,6 +507,7 @@ void render(){
     shaderPrograms[shaderProgramIndex]->set_uniform_value("model", rightHandMatrix);
     spongeBobRightHand->draw();
 
+
     // 畫漢堡
     shaderPrograms[shaderProgramIndex]->use();
 
@@ -526,6 +527,8 @@ void render(){
     // 畫爆炸 
     shader_program_t* bombShader = shaderPrograms[6]; 
     bombShader->use();
+
+    glDisable(GL_CULL_FACE);
     
     bombShader->set_uniform_value("view", view);
     bombShader->set_uniform_value("projection", projection);
@@ -545,6 +548,8 @@ void render(){
             burgerModel->draw();
         }
     }
+
+    glEnable(GL_CULL_FACE);
     
     shaderPrograms[shaderProgramIndex]->use();
 

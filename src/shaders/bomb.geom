@@ -8,6 +8,7 @@ in VS_OUT {
 
 out vec2 TexCoord;
 uniform float time;
+uniform mat4 projection;
 
 vec4 explode(vec4 position, vec3 normal) {
     float magnitude = 50.0;
@@ -28,7 +29,8 @@ void main() {
     
     vec3 normal = GetNormal();
     for(int i = 0; i < 3; i++) {    
-        gl_Position = explode(gl_in[i].gl_Position, normal);     
+        vec4 viewPos = explode(gl_in[i].gl_Position, normal);   
+        gl_Position = projection * viewPos;  
         TexCoord = gs_in[i].TexCoord;
         EmitVertex();
     }
