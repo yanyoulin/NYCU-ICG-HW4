@@ -14,10 +14,10 @@
 ```bash
 git clone --recursive https://github.com/yanyoulin/NYCU-ICG-HW4.git
 ```
-用 VS Code 打開此資料夾後，若下載完存在 build 資料夾，請手動刪除  
-設定完 Compiler 後直接執行即可  
+用 VS Code 打開此資料夾後，設定完 Compiler 後直接執行即可  
 VS Code should have CMake Tools extension already
 ### 操作
+(投擲漢堡和身體波動不能同時進行)
 | 按鍵 | 效果 |
 | :-: | --- |
 | W | Zoom in |
