@@ -149,7 +149,7 @@ void model_setup(){
     cubeModel = new Object(cube_obj_path);
 
     // Load floor model
-    floorModel = new Object(cube_obj_path); // 重複利用 cube.obj
+    floorModel = new Object(cube_obj_path); 
     std::string floor_texture_path = "..\\..\\src\\asset\\texture\\skybox\\bottom.jpg";     
     floorModel->loadTexture(floor_texture_path);
 
@@ -174,7 +174,7 @@ void camera_setup(){
     camera.minOrbitPitch = -80.0f;
     camera.maxOrbitPitch = 80.0f;
     camera.target = glm::vec3(0.0f);
-    camera.enableAutoOrbit = true;
+    camera.enableAutoOrbit = false;
     camera.autoOrbitSpeed = 20.0f;
 
     updateCamera();
@@ -223,7 +223,7 @@ void shader_setup(){
 #endif
 
     std::vector<std::string> shadingMethod = {
-        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb", "change", "jellyfish"
+        "default", "bubble", "bomb", "change", "jellyfish"
     };
 
     for(int i=0; i<shadingMethod.size(); i++){
@@ -371,7 +371,7 @@ void update(){
 
             glm::vec3 spawnPos = shoulderWorld + rotatedArm;
 
-            glm::vec3 rotationAxis = glm::vec3(1.0f, 0.0f, 0.0f); // 你的旋轉軸
+            glm::vec3 rotationAxis = glm::vec3(1.0f, 0.0f, 0.0f); 
             glm::vec3 tangentDir = glm::cross(rotationAxis, rotatedArm);
             tangentDir = glm::normalize(tangentDir);
 
@@ -436,23 +436,6 @@ void render(){
     shaderPrograms[shaderProgramIndex]->set_uniform_value("projection", projection);
     shaderPrograms[shaderProgramIndex]->set_uniform_value("viewPos", camera.position - glm::vec3(0.0f, 0.2f, 0.1f));
 
-    // TODO: set additional uniform value for shader program
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("light.position", light.position);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("light.ambient", light.ambient);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("light.diffuse", light.diffuse);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("light.specular", light.specular);
-
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("material.ambient", material.ambient);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("material.diffuse", material.diffuse);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("material.specular", material.specular);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("material.gloss", material.gloss);
-
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("bias", 0.2f);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("scale", 0.7f);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("power", 2.0f);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("alpha", 0.4f);
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("eta", 1.0f / 1.52f);
-
     // specifying sampler for shader program
     shaderPrograms[shaderProgramIndex]->set_uniform_value("ourTexture", 0);
 
@@ -478,7 +461,7 @@ void render(){
     shader_program_t* currentShader = nullptr;
     
     if (isChanging) { // 形變
-        currentShader = shaderPrograms[7]; 
+        currentShader = shaderPrograms[3]; 
     } else {
         currentShader = shaderPrograms[shaderProgramIndex];
     }
@@ -525,7 +508,7 @@ void render(){
     }
 
     // 畫爆炸 
-    shader_program_t* bombShader = shaderPrograms[6]; 
+    shader_program_t* bombShader = shaderPrograms[2]; 
     bombShader->use();
 
     glDisable(GL_CULL_FACE);
@@ -583,7 +566,7 @@ void render(){
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        shader_program_t* bubbleShader = shaderPrograms[5]; // 假設是 index 5
+        shader_program_t* bubbleShader = shaderPrograms[1]; 
         bubbleShader->use();
         bubbleShader->set_uniform_value("view", view);
         bubbleShader->set_uniform_value("projection", projection);
@@ -600,8 +583,7 @@ void render(){
     }
 
     // 畫水母
-    // 假設 jellyfish 是最後一個 shader (index 8)
-    shader_program_t* jellyShader = shaderPrograms[8]; 
+    shader_program_t* jellyShader = shaderPrograms[4]; 
     jellyShader->use();
     
     glDisable(GL_CULL_FACE);
@@ -610,17 +592,15 @@ void render(){
     jellyShader->set_uniform_value("projection", projection);
     jellyShader->set_uniform_value("time", (float)glfwGetTime());
     
-    // 讓水母整體上下漂浮 (Floating)
+    // 讓水母上下漂浮
     glm::mat4 jellyModel = glm::mat4(1.0f);
-    float floatY = sin(glfwGetTime()) * 10.0f; // 上下漂浮 10 單位
+    float floatY = sin(glfwGetTime()) * 10.0f; 
     jellyModel = glm::translate(jellyModel, glm::vec3(0.0f, floatY, 0.0f));
     
     jellyShader->set_uniform_value("model", jellyModel);
 
     glBindVertexArray(jellyfishVAO);
-    // 畫 5 個點，每個點都會變成一隻水母
     glDrawArrays(GL_POINTS, 0, 5); 
-    
     glBindVertexArray(0);
 
     glEnable(GL_CULL_FACE);
@@ -712,26 +692,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    if (key == GLFW_KEY_0 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 0;
-    if (key == GLFW_KEY_1 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 1;
-    if (key == GLFW_KEY_2 && (action == GLFW_REPEAT || action == GLFW_PRESS)) 
-        shaderProgramIndex = 2;
-    if (key == GLFW_KEY_3 && action == GLFW_PRESS)
-        shaderProgramIndex = 3;
-    if (key == GLFW_KEY_4 && action == GLFW_PRESS)
-        shaderProgramIndex = 4;
-    if (key == GLFW_KEY_5 && action == GLFW_PRESS)
-        shaderProgramIndex = 5;
-    if (key == GLFW_KEY_6 && action == GLFW_PRESS)
-        shaderProgramIndex = 6;
-    if (key == GLFW_KEY_7 && action == GLFW_PRESS)
-        shaderProgramIndex = 7;
-    if (key == GLFW_KEY_8 && action == GLFW_PRESS)
-        shaderProgramIndex = 8;
-    if( key == GLFW_KEY_9 && action == GLFW_PRESS)
-        isCube = !isCube;
     // 吹泡泡
     if (key == GLFW_KEY_B && action == GLFW_PRESS)
         isBlowing = !isBlowing;
