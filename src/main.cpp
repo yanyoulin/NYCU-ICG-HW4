@@ -89,18 +89,19 @@ float lastFrame = 0.0f;
 
 // 丟漢堡炸彈
 Object* burgerModel = nullptr;
+struct Burger {
+    glm::vec3 position;
+    glm::vec3 velocity;
+    bool isFlying;     
+    float stateStartTime; 
+};
 
-bool isThrowing = false;      
-bool isBurgerFlying = false;  
-bool isExploding = false;    
+std::vector<Burger> burgerList; 
+bool hasFired = false;          
+bool isThrowing = false;   
+float throwStartTime = 0.0f;   
 
-float throwStartTime = 0.0f; 
-float flightStartTime = 0.0f; 
-float explodeStartTime = 0.0f;
-
-glm::vec3 burgerPos(0.0f);    
-glm::vec3 burgerVelocity(0.0f); 
-const glm::vec3 gravity(0.0f, -200.0f, 0.0f); 
+const glm::vec3 gravity(0.0f, -300.0f, 0.0f); 
 
 float handRotationAngle = 0.0f;
 
@@ -318,91 +319,75 @@ void update(){
 
     // 丟漢堡
     float now = glfwGetTime();
-    // --- 階段 1: 投擲動作 (手部旋轉) ---
-    // --- 階段 1: 投擲動作 (手部旋轉) ---
+    // 手轉
     if (isThrowing) {
         float timePassed = now - throwStartTime;
-        float totalAnimTime = 0.5f; // 動作總時間
-        
-        // 計算當前角度 (0 ~ 360 度)
+        float totalAnimTime = 0.5f; 
         float currentAngleDeg = 360.0f * (timePassed / totalAnimTime);
         handRotationAngle = glm::radians(currentAngleDeg);
 
-        // --- 關鍵修改：在 1/3 圈 (120度) 時發射 ---
-        // 條件：角度超過 120度 且 漢堡還沒飛出去
-        if (currentAngleDeg >= 120.0f && !isBurgerFlying) {
-            
-            // 1. 啟動飛行狀態
-            isBurgerFlying = true;
-            flightStartTime = now;
+        //在 1/3 圈時發射
+        if (currentAngleDeg >= 120.0f && !hasFired) {
+            hasFired = true;
 
-            // --- 數學計算開始 ---
-            
-            // A. 計算肩膀的世界座標 (Pivot Point)
-            // 根據你的 code，肩膀在 Local Space 是 (0.4, 0.4, 0.0)
-            // 記得乘上 modelMatrix (裡面有 scale 100)
             glm::vec4 shoulderLocal = glm::vec4(0.4f, 0.4f, 0.0f, 1.0f);
             glm::vec3 shoulderWorld = glm::vec3(modelMatrix * shoulderLocal);
-
-            // B. 計算手臂向量 (從肩膀到手的向量)
-            // 根據你的 code，手相對肩膀偏移是 (-0.4, -0.4, 0.0)
-            // 這裡手動乘 100.0f 是因為這向量是純方向長度，不受 modelMatrix 位移影響，只受縮放影響
             glm::vec3 armVector = glm::vec3(-0.7f, -0.4f, 0.0f) * 100.0f;
 
-            // C. 將手臂向量旋轉 120 度
-            // 建立一個臨時旋轉矩陣 (繞 X 軸轉 120 度)
             glm::mat4 rotMat = glm::rotate(glm::mat4(1.0f), glm::radians(120.0f), glm::vec3(1.0f, 0.0f, 0.0f));
             glm::vec3 rotatedArm = glm::vec3(rotMat * glm::vec4(armVector, 1.0f));
 
-            // D. 設定漢堡的起始位置 (肩膀位置 + 旋轉後的手臂長度)
-            burgerPos = shoulderWorld + rotatedArm;
+            glm::vec3 spawnPos = shoulderWorld + rotatedArm;
 
-            // E. 計算切線速度 (Tangent Velocity)
-            // 切線方向 = 旋轉軸 (X軸) Cross 手臂向量
             glm::vec3 rotationAxis = glm::vec3(1.0f, 0.0f, 0.0f); // 你的旋轉軸
             glm::vec3 tangentDir = glm::cross(rotationAxis, rotatedArm);
             tangentDir = glm::normalize(tangentDir);
 
-            // F. 設定最終速度
-            float throwPower = 200.0f; // 投擲力度 (可自行調整)
-            burgerVelocity = tangentDir * throwPower;
+            float throwPower = 250.0f; 
+
+            Burger newBurger;
+            newBurger.position = spawnPos;
+            newBurger.velocity = tangentDir * throwPower;
+            newBurger.isFlying = true;
+            newBurger.stateStartTime = now;
+            
+            burgerList.push_back(newBurger);
         }
 
-        // 動畫結束
         if (timePassed >= totalAnimTime) {
             isThrowing = false;
             handRotationAngle = 0.0f;
         }
     }
 
-    // --- 階段 2: 漢堡飛行 (拋物線) ---
-    if (isBurgerFlying) {
-        float t = now - flightStartTime; // 飛行時間
-        float dt = deltaTime;            // 片段時間
+    for(int i = 0; i < burgerList.size(); i++) {
+        if (burgerList[i].isFlying) { // 漢堡飛
+            float t = now - burgerList[i].stateStartTime; 
+            float dt = deltaTime;            
 
-        // 物理公式: P = P0 + V*t + 0.5*a*t^2 (這裡用歐拉積分法簡化)
-        burgerVelocity += gravity * dt;
-        burgerPos += burgerVelocity * dt;
+            burgerList[i].velocity += gravity * dt;
+            burgerList[i].position += burgerList[i].velocity * dt;
 
-        float floorLevel = 0.0f;
-        float burgerRadius = 40.0f;
+            float floorLevel = -20.0f;
+            float burgerRadius = 20.0f;
 
-        if (burgerPos.y <= floorLevel + burgerRadius) {
-            isBurgerFlying = false;
-            isExploding = true;
-            explodeStartTime = now;
-            
-            // 修正位置：停在半徑的高度，這樣底部剛好在地板
-            burgerPos.y = floorLevel + burgerRadius; 
+            if (burgerList[i].position.y <= floorLevel + burgerRadius) {
+                burgerList[i].isFlying = false;
+                burgerList[i].stateStartTime = now; 
+                burgerList[i].position.y = floorLevel + burgerRadius; 
+            }
+        }
+        else{ //爆炸
+            if (now - burgerList[i].stateStartTime > 1.0f) {
+                burgerList.erase(burgerList.begin() + i);
+                i--; 
+            }
+            else {
+                continue;
+            }
         }
     }
 
-    // --- 階段 3: 爆炸 (持續 2 秒後消失) ---
-    if (isExploding) {
-        if (now - explodeStartTime > 2.0f) {
-            isExploding = false; // 結束
-        }
-    }
 }
 
 void render(){
@@ -475,59 +460,46 @@ void render(){
     shaderPrograms[shaderProgramIndex]->set_uniform_value("model", rightHandMatrix);
     spongeBobRightHand->draw();
 
+    // 畫漢堡
+    shaderPrograms[shaderProgramIndex]->use();
 
-    // ==========================================
-    // 畫漢堡 (飛行中)
-    // ==========================================
-    if (isBurgerFlying) {
-        shaderPrograms[shaderProgramIndex]->use(); // 用一般的 shader
-        
-        glm::mat4 burgerMat = glm::mat4(1.0f);
-        burgerMat = glm::translate(burgerMat, burgerPos);
-        burgerMat = glm::scale(burgerMat, glm::vec3(40.0f)); // 漢堡大小
-        // 讓漢堡自己在空中轉
-        burgerMat = glm::rotate(burgerMat, (float)glfwGetTime() * 5.0f, glm::vec3(1,1,1));
+    for(int i = 0; i < burgerList.size(); i++) {
+        if(burgerList[i].isFlying) {
+            glm::mat4 burgerMat = glm::mat4(1.0f);
+            burgerMat = glm::translate(burgerMat, burgerList[i].position);
+            burgerMat = glm::scale(burgerMat, glm::vec3(40.0f)); 
+            // 漢堡自轉
+            burgerMat = glm::rotate(burgerMat, (float)glfwGetTime() * 5.0f, glm::vec3(1,1,1));
 
-        shaderPrograms[shaderProgramIndex]->set_uniform_value("model", burgerMat);
-        burgerModel->draw();
+            shaderPrograms[shaderProgramIndex]->set_uniform_value("model", burgerMat);
+            burgerModel->draw();
+        }
     }
 
-    // ==========================================
-    // 畫爆炸 (使用 Bomb Shader)
-    // ==========================================
-    if (isExploding) {
-        // 切換到 bomb shader (假設是 index 6，請依你的 list 順序)
-        // "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb" -> index 6
-        shader_program_t* bombShader = shaderPrograms[6]; 
-        bombShader->use();
-        
-        // 傳送必要 Uniform
-        bombShader->set_uniform_value("view", view);
-        bombShader->set_uniform_value("projection", projection);
-        glm::mat4 explodeMat = glm::mat4(1.0f);
-        explodeMat = glm::translate(explodeMat, burgerPos); // 1. 先移到爆炸點
-        explodeMat = glm::scale(explodeMat, glm::vec3(40.0f)); // 2. 記得放大！(跟飛行時一樣)
-        bombShader->set_uniform_value("model", explodeMat);        
-        // bomb.geom 需要的時間參數 (讓它從 0 開始)
-        float explodeTime = (float)glfwGetTime() - explodeStartTime;
-        bombShader->set_uniform_value("time", explodeTime);
-        
-        // 爆炸顏色 (例如火紅色)
-        bombShader->set_uniform_value("aExplosionColor", glm::vec3(1.0f, 0.2f, 0.0f));
-        
-        // 紋理 (如果有)
-        bombShader->set_uniform_value("ourTexture", 0);
+    // 畫爆炸 
+    shader_program_t* bombShader = shaderPrograms[6]; 
+    bombShader->use();
+    
+    bombShader->set_uniform_value("view", view);
+    bombShader->set_uniform_value("projection", projection);
+    bombShader->set_uniform_value("ourTexture", 0);
 
-        // 畫漢堡 (這時 geometry shader 會把它炸開)
-        burgerModel->draw();
-        
-        bombShader->release();
-        
-        // 切換回原本的 shader 以免影響後面
-        shaderPrograms[shaderProgramIndex]->use();
+    for(int i = 0; i < burgerList.size(); i++) {
+        if (!burgerList[i].isFlying) { // 爆炸中
+            glm::mat4 explodeMat = glm::mat4(1.0f);
+            explodeMat = glm::translate(explodeMat, burgerList[i].position); 
+            explodeMat = glm::scale(explodeMat, glm::vec3(40.0f)); 
+
+            bombShader->set_uniform_value("model", explodeMat);        
+            float explodeTime = (float)glfwGetTime() - burgerList[i].stateStartTime;
+            bombShader->set_uniform_value("time", explodeTime);
+            bombShader->set_uniform_value("aExplosionColor", glm::vec3(1.0f, 0.2f, 0.0f));
+
+            burgerModel->draw();
+        }
     }
     
-
+    shaderPrograms[shaderProgramIndex]->use();
 
     shaderPrograms[shaderProgramIndex]->release();
 
@@ -687,9 +659,10 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 
     // 丟漢堡炸彈
     if (key == GLFW_KEY_H && action == GLFW_PRESS) {
-        if (!isThrowing && !isBurgerFlying && !isExploding) {
+        if (!isThrowing) {
             isThrowing = true;
             throwStartTime = glfwGetTime();
+            hasFired = false;
         }
     }
 }
