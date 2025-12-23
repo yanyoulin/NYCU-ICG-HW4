@@ -81,6 +81,7 @@ Object* cubeModel = nullptr;
 Object* floorModel = nullptr;
 bool isCube = false;
 bool isBlowing = false; // 吹泡泡
+bool isChanging = false; // 形變
 glm::mat4 modelMatrix(1.0f);
 
 float currentTime = 0.0f;
@@ -213,7 +214,7 @@ void shader_setup(){
 #endif
 
     std::vector<std::string> shadingMethod = {
-        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb"
+        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb", "change"
     };
 
     for(int i=0; i<shadingMethod.size(); i++){
@@ -229,6 +230,9 @@ void shader_setup(){
             shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
         }
         if (shadingMethod[i] == "bomb") {
+            shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
+        }
+        if (shadingMethod[i] == "change") {
             shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
         }
         shaderProgram->link_shader();
@@ -443,8 +447,23 @@ void render(){
     }
 
     // 畫海綿寶寶
-    shaderPrograms[shaderProgramIndex]->set_uniform_value("model", modelMatrix);
+    shader_program_t* currentShader = nullptr;
     
+    if (isChanging) { // 形變
+        currentShader = shaderPrograms[7]; 
+    } else {
+        currentShader = shaderPrograms[shaderProgramIndex];
+    }
+
+    currentShader->use();
+
+    currentShader->set_uniform_value("view", view);
+    currentShader->set_uniform_value("projection", projection);
+    currentShader->set_uniform_value("viewPos", camera.position - glm::vec3(0.0f, 0.2f, 0.1f));
+    currentShader->set_uniform_value("ourTexture", 0);
+    currentShader->set_uniform_value("time", (float)glfwGetTime());
+
+    currentShader->set_uniform_value("model", modelMatrix);
     spongeBobBody->draw();
     spongeBobLeftHand->draw();
 
@@ -664,6 +683,11 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
             throwStartTime = glfwGetTime();
             hasFired = false;
         }
+    }
+
+    // 形變
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        isChanging = !isChanging;
     }
 }
 
