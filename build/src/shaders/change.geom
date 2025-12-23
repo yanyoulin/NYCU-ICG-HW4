@@ -15,6 +15,7 @@ out vec3 FragPos;
 uniform float time;
 uniform mat4 projection;
 
+// 計算面法線 (用來製造"細胞/晶體"的視覺質感)
 vec3 GetFaceNormal() {
     vec3 a = gl_in[0].gl_Position.xyz - gl_in[1].gl_Position.xyz;
     vec3 b = gl_in[2].gl_Position.xyz - gl_in[1].gl_Position.xyz;
@@ -27,7 +28,9 @@ void main() {
 
     for(int i = 0; i < 3; i++) {
         vec3 pos = gl_in[i].gl_Position.xyz;
-        vec3 vertexNormal = normalize(gs_in[i].Normal); 
+        vec3 vertexNormal = normalize(gs_in[i].Normal); // 使用原本的頂點法線移動，才不會裂開
+
+        // --- 波浪參數 ---
         
         // 1. 波浪計算 (從頭流到腳)
         // pos.y : 使用頂點高度，讓波浪更平滑

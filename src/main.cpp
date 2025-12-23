@@ -101,10 +101,19 @@ std::vector<Burger> burgerList;
 bool hasFired = false;          
 bool isThrowing = false;   
 float throwStartTime = 0.0f;   
-
 const glm::vec3 gravity(0.0f, -300.0f, 0.0f); 
-
 float handRotationAngle = 0.0f;
+
+// jellyfish
+unsigned int jellyfishVAO, jellyfishVBO;
+// 設定 5 隻水母的隨機位置
+float jellyfishData[] = {
+    -100.0f, 30.0f, -100.0f,
+     90.0f, 60.0f,  20.0f,
+    -130.0f, 80.0f, 100.0f,
+     120.0f, 40.0f, -80.0f,
+      0.0f, 150.0f,  0.0f
+};
 
 
 void model_setup(){
@@ -214,7 +223,7 @@ void shader_setup(){
 #endif
 
     std::vector<std::string> shadingMethod = {
-        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb", "change"
+        "default", "bling-phong", "gouraud", "metallic", "glass_schlick", "bubble", "bomb", "change", "jellyfish"
     };
 
     for(int i=0; i<shadingMethod.size(); i++){
@@ -233,6 +242,9 @@ void shader_setup(){
             shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
         }
         if (shadingMethod[i] == "change") {
+            shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
+        }
+        if (shadingMethod[i] == "jellyfish") {
             shaderProgram->add_shader(gpath, GL_GEOMETRY_SHADER);
         }
         shaderProgram->link_shader();
@@ -295,6 +307,21 @@ void bubble_setup() {
     glBindVertexArray(0);
 }
 
+void jellyfish_setup() {
+    glGenVertexArrays(1, &jellyfishVAO);
+    glGenBuffers(1, &jellyfishVBO);
+    
+    glBindVertexArray(jellyfishVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, jellyfishVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(jellyfishData), jellyfishData, GL_STATIC_DRAW);
+    
+    // layout(location = 0) in vec3 aPos;
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    
+    glBindVertexArray(0);
+}
+
 void setup(){
     light_setup();
     model_setup();
@@ -303,6 +330,7 @@ void setup(){
     cubemap_setup();
     material_setup();
     bubble_setup();
+    jellyfish_setup();
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -565,6 +593,33 @@ void render(){
 
         glDisable(GL_BLEND);
     }
+
+    // 畫水母
+    // 假設 jellyfish 是最後一個 shader (index 8)
+    shader_program_t* jellyShader = shaderPrograms[8]; 
+    jellyShader->use();
+    
+    glDisable(GL_CULL_FACE);
+
+    jellyShader->set_uniform_value("view", view);
+    jellyShader->set_uniform_value("projection", projection);
+    jellyShader->set_uniform_value("time", (float)glfwGetTime());
+    
+    // 讓水母整體上下漂浮 (Floating)
+    glm::mat4 jellyModel = glm::mat4(1.0f);
+    float floatY = sin(glfwGetTime()) * 10.0f; // 上下漂浮 10 單位
+    jellyModel = glm::translate(jellyModel, glm::vec3(0.0f, floatY, 0.0f));
+    
+    jellyShader->set_uniform_value("model", jellyModel);
+
+    glBindVertexArray(jellyfishVAO);
+    // 畫 5 個點，每個點都會變成一隻水母
+    glDrawArrays(GL_POINTS, 0, 5); 
+    
+    glBindVertexArray(0);
+
+    glEnable(GL_CULL_FACE);
+    jellyShader->release();
 }
 
 int main() {
@@ -678,7 +733,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
 
     // 丟漢堡炸彈
     if (key == GLFW_KEY_H && action == GLFW_PRESS) {
-        if (!isThrowing) {
+        if (!isThrowing && !isChanging) {
             isThrowing = true;
             throwStartTime = glfwGetTime();
             hasFired = false;
